@@ -48,6 +48,12 @@ RSpec.describe 'URL validation' do
       expect(user).to be_valid
     end
 
+    it 'allows an url with brackets' do
+      user.homepage = 'https://localhost/[TEST]'
+      expect(user).to be_valid
+      expect(user.homepage).to eq("https://localhost/%5BTEST%5D")
+    end
+
     it 'does not allow a url with an invalid scheme' do
       user.homepage = 'ftp://localhost'
 
@@ -77,9 +83,10 @@ RSpec.describe 'URL validation' do
       expect(user).not_to be_valid
     end
 
-    it "does not allow a url with a space in the querystring" do
+    it "does allow a url with a space in the querystring (does the conversion)" do
       user.homepage = "http://example.com/some/? doodads=ok"
-      expect(user).not_to be_valid
+      expect(user).to be_valid
+      expect(user.homepage).to eq("http://example.com/some/?%20doodads=ok")
     end
 
     it "returns a default error message" do

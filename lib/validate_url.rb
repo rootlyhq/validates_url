@@ -1,6 +1,8 @@
 require 'active_model'
 require 'active_support/i18n'
 require 'public_suffix'
+require 'addressable'
+
 I18n.load_path += Dir[File.dirname(__FILE__) + "/locale/*.yml"]
 
 module ActiveModel
@@ -50,19 +52,24 @@ module ActiveModel
       end
 
       def validate_url(record, attribute, value, schemes)
-        uri = URI.parse(URI::Parser.new.escape(value)
+        raise Addressable::URI::InvalidURIError if value.blank?
+        uri = Addressable::URI.parse(value)
         host = uri && uri.host
         scheme = uri && uri.scheme
+        value = uri.normalize.to_s
 
         valid_raw_url = scheme && value =~ /\A#{URI::regexp([scheme])}\z/
         valid_scheme = host && scheme && schemes.include?(scheme)
         valid_no_local = !options.fetch(:no_local) || (host && host.include?('.'))
         valid_suffix = !options.fetch(:public_suffix) || (host && PublicSuffix.valid?(host, :default_rule => nil))
 
+        # Modify the record
+        record.send("#{attribute}=", value)
+
         unless valid_raw_url && valid_scheme && valid_no_local && valid_suffix
           record.errors.add(attribute, options.fetch(:message), value: value)
         end
-      rescue URI::InvalidURIError, URI::InvalidComponentError
+      rescue Addressable::URI::InvalidURIError
         record.errors.add(attribute, :url, **filtered_options(value))
       end
     end
