@@ -56,7 +56,7 @@ module ActiveModel
         uri = Addressable::URI.parse(value)
         host = uri && uri.host
         scheme = uri && uri.scheme
-        value = uri.normalize.to_s
+        value = uri.normalize.to_s.chomp("/")
 
         valid_raw_url = scheme && value =~ /\A#{URI::regexp([scheme])}\z/
         valid_scheme = host && scheme && schemes.include?(scheme)
